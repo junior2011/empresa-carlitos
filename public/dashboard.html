@@ -11,12 +11,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; height: 100vh; background: #f8f9fa; }
   
-  /* Sidebar */
   #sidebar { width: 400px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow-y: auto; }
   .sidebar-header { padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
   .sidebar-header h1 { font-size: 20px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
   
-  /* Planificador */
   .planner-section { padding: 20px; border-bottom: 1px solid #e5e7eb; }
   .planner-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1f2937; }
   .address-input { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -25,7 +23,6 @@
   .btn-plan { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .btn-plan:disabled { background: #9ca3af; cursor: not-allowed; }
   
-  /* Resultados de ruta */
   .route-result { margin-top: 16px; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; display: none; }
   .route-result h3 { font-size: 14px; color: #166534; margin-bottom: 8px; }
   .route-stat { font-size: 13px; color: #15803d; margin-bottom: 4px; }
@@ -34,7 +31,6 @@
   .optimized-list li:last-child { border-bottom: none; }
   .step-num { background: #667eea; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
 
-  /* Lista de viajes en vivo */
   .live-section { padding: 20px; flex: 1; }
   .live-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1f2937; display: flex; align-items: center; gap: 8px; }
   .trip-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
@@ -48,10 +44,18 @@
   .trip-status.moving { background: #dbeafe; color: #1e40af; }
   .trip-status.stopped { background: #fef3c7; color: #92400e; }
   
-  /* Mapa */
-  #map { flex: 1; }
+  #map { flex: 1; position: relative; }
   
-  /* Loading */
+  /* Botón flotante para centrar en el móvil */
+  .center-btn {
+    position: absolute; bottom: 30px; right: 30px; z-index: 1000;
+    background: white; border: 2px solid #667eea; color: #667eea;
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 18px;
+  }
+  .center-btn:hover { background: #667eea; color: white; }
+
   .loading { text-align: center; padding: 10px; color: #6b7280; font-size: 13px; display: none; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -65,7 +69,6 @@
     <p>Planificador de Rutas y Monitoreo</p>
   </div>
 
-  <!-- SECCIÓN 1: PLANIFICADOR DE RUTAS -->
   <div class="planner-section">
     <div class="planner-title"><i class="fas fa-route"></i> Planificar Ruta Óptima</div>
     <div id="addressInputs">
@@ -80,7 +83,7 @@
     </div>
     <button class="btn-plan" style="background:#3b82f6; margin-bottom:8px;" onclick="addAddress()">+ Agregar dirección</button>
     <button class="btn-plan" id="btnCalculate" onclick="calculateOptimalRoute()">
-      <i class="fas fa-calculator"></i> Calcular Ruta Óptima (Tráfico)
+      <i class="fas fa-calculator"></i> Calcular Ruta Óptima
     </button>
     
     <div class="loading" id="routeLoading">
@@ -95,7 +98,6 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 2: RASTREO EN VIVO -->
   <div class="live-section">
     <div class="live-title"><i class="fas fa-satellite-dish"></i> Monitoreo en Vivo</div>
     <div id="tripsList">
@@ -106,21 +108,32 @@
   </div>
 </div>
 
-<div id="map"></div>
+<div id="map">
+  <button class="center-btn" id="centerBtn" onclick="centerOnMobile()" title="Centrar en móvil">
+    <i class="fas fa-crosshairs"></i>
+  </button>
+</div>
 
 <script>
 const BACKEND_URL = window.location.origin;
-let map, routeLine, userMarker;
+let map;
+
+// Variables separadas para que no se sobrescriban
+let plannedRouteLine = null;
+let plannedMarkers = [];
+let liveRouteLine = null;
+let liveMarker = null;
+
 let selectedTripId = null;
 let pollInterval;
+let lastLivePosition = null;
 
-// Inicializar mapa
 function initMap() {
   map = L.map('map').setView([19.4326, -99.1332], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 }
 
-// --- LÓGICA DEL PLANIFICADOR DE RUTAS ---
+// --- PLANIFICADOR DE RUTAS ---
 function addAddress() {
   const container = document.getElementById('addressInputs');
   const div = document.createElement('div');
@@ -154,7 +167,6 @@ async function calculateOptimalRoute() {
   resultDiv.style.display = 'none';
 
   try {
-    // 1. Geocodificar direcciones
     const coords = [];
     for (const addr of inputs) {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`);
@@ -163,7 +175,6 @@ async function calculateOptimalRoute() {
       coords.push({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), name: addr });
     }
 
-    // 2. Llamar a OSRM Trip (TSP - Optimización de ruta)
     const coordsStr = coords.map(c => `${c.lon},${c.lat}`).join(';');
     const osrmUrl = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?overview=full&geometries=geojson&source=first&destination=last&roundtrip=false`;
     
@@ -175,24 +186,29 @@ async function calculateOptimalRoute() {
     const trip = osrmData.trips[0];
     const waypoints = osrmData.waypoints;
 
-    // 3. Dibujar en mapa
-    if (routeLine) map.removeLayer(routeLine);
-    const latlngs = trip.geometry.coordinates.map(c => [c[1], c[0]]);
-    routeLine = L.polyline(latlngs, { color: '#10b981', weight: 5, opacity: 0.8 }).addTo(map);
-    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+    // 1. Limpiar ruta planificada anterior (NO toca la ruta en vivo)
+    if (plannedRouteLine) map.removeLayer(plannedRouteLine);
+    plannedMarkers.forEach(m => map.removeLayer(m));
+    plannedMarkers = [];
 
-    // Marcadores numerados
+    // 2. Dibujar nueva ruta planificada
+    const latlngs = trip.geometry.coordinates.map(c => [c[1], c[0]]);
+    plannedRouteLine = L.polyline(latlngs, { color: '#10b981', weight: 5, opacity: 0.8 }).addTo(map);
+    
+    // Centrar mapa solo al calcular (el usuario luego puede moverlo libremente)
+    map.fitBounds(plannedRouteLine.getBounds(), { padding: [50, 50] });
+
     waypoints.forEach((wp, i) => {
       const icon = L.divIcon({
         className: '',
         html: `<div style="background:#ef4444;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3)">${i+1}</div>`,
         iconSize: [28, 28], iconAnchor: [14, 14]
       });
-      L.marker([wp.location[1], wp.location[0]], { icon }).addTo(map)
+      const marker = L.marker([wp.location[1], wp.location[0]], { icon }).addTo(map)
        .bindPopup(`<b>Parada ${i+1}</b><br>${coords[wp.waypoint_index].name}`);
+      plannedMarkers.push(marker);
     });
 
-    // 4. Mostrar resultados
     document.getElementById('resDistance').textContent = (trip.distance / 1000).toFixed(2);
     document.getElementById('resTime').textContent = Math.round(trip.duration / 60);
     
@@ -215,7 +231,7 @@ async function calculateOptimalRoute() {
   }
 }
 
-// --- LÓGICA DE RASTREO EN VIVO ---
+// --- RASTREO EN VIVO ---
 async function loadTrips() {
   try {
     const res = await fetch(`${BACKEND_URL}/api/trips`);
@@ -256,8 +272,20 @@ async function loadTrips() {
 async function selectTrip(tripId) {
   selectedTripId = tripId;
   loadTrips();
+  
   if (pollInterval) clearInterval(pollInterval);
+  
+  // Limpiar ruta en vivo anterior
+  if (liveRouteLine) { map.removeLayer(liveRouteLine); liveRouteLine = null; }
+  if (liveMarker) { map.removeLayer(liveMarker); liveMarker = null; }
+
   await fetchTripData(tripId);
+  
+  // Centrar el mapa en el viaje seleccionado SOLO la primera vez
+  if (liveRouteLine) {
+    map.fitBounds(liveRouteLine.getBounds(), { padding: [50, 50] });
+  }
+
   pollInterval = setInterval(() => fetchTripData(tripId), 3000);
 }
 
@@ -266,22 +294,43 @@ async function fetchTripData(tripId) {
     const res = await fetch(`${BACKEND_URL}/api/trip/${tripId}`);
     if (!res.ok) throw new Error('No encontrado');
     const data = await res.json();
-    drawRoute(data.points);
+    drawLiveRoute(data.points);
   } catch (err) { console.error(err); }
 }
 
-function drawRoute(points) {
+function drawLiveRoute(points) {
   if (!points || points.length === 0) return;
   const latlngs = points.map(p => [p.lat, p.lng]);
+  lastLivePosition = points[points.length - 1];
 
-  if (routeLine) routeLine.setLatLngs(latlngs);
-  else routeLine = L.polyline(latlngs, { color: '#667eea', weight: 4, dashArray: '5, 10' }).addTo(map);
+  // Mostrar botón de centrar si el usuario se alejó
+  document.getElementById('centerBtn').style.display = 'flex';
 
-  const lastPoint = points[points.length - 1];
-  if (userMarker) userMarker.setLatLng([lastPoint.lat, lastPoint.lng]);
-  else userMarker = L.marker([lastPoint.lat, lastPoint.lng]).addTo(map).bindPopup('Móvil en vivo').openPopup();
+  if (liveRouteLine) {
+    liveRouteLine.setLatLngs(latlngs);
+  } else {
+    liveRouteLine = L.polyline(latlngs, { color: '#667eea', weight: 4, dashArray: '5, 10' }).addTo(map);
+  }
 
-  map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+  if (liveMarker) {
+    liveMarker.setLatLng([lastLivePosition.lat, lastLivePosition.lng]);
+  } else {
+    liveMarker = L.marker([lastLivePosition.lat, lastLivePosition.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="background:#667eea;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>',
+        iconSize: [22, 22], iconAnchor: [11, 11]
+      })
+    }).addTo(map).bindPopup('Móvil en vivo');
+  }
+  
+  // NOTA: Se eliminó map.fitBounds() de aquí para dar libertad total de movimiento al usuario.
+}
+
+function centerOnMobile() {
+  if (lastLivePosition) {
+    map.setView([lastLivePosition.lat, lastLivePosition.lng], 16);
+  }
 }
 
 // Inicialización
