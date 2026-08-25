@@ -11,53 +11,92 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; height: 100vh; background: #f8f9fa; }
   
-  #sidebar { width: 400px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow-y: auto; }
+  #sidebar { width: 420px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow-y: auto; }
   .sidebar-header { padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
   .sidebar-header h1 { font-size: 20px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-header p { font-size: 13px; opacity: 0.9; }
   
   .planner-section { padding: 20px; border-bottom: 1px solid #e5e7eb; }
-  .planner-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1f2937; }
+  .planner-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1f2937; display: flex; align-items: center; gap: 8px; }
   .address-input { display: flex; gap: 8px; margin-bottom: 8px; }
   .address-input input { flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
-  .address-input button { background: #ef4444; color: white; border: none; border-radius: 8px; width: 36px; cursor: pointer; }
-  .btn-plan { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .address-input button { background: #ef4444; color: white; border: none; border-radius: 8px; width: 36px; cursor: pointer; font-size: 18px; }
+  .btn-plan { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
   .btn-plan:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-plan.secondary { background: #3b82f6; }
   
   .route-result { margin-top: 16px; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; display: none; }
-  .route-result h3 { font-size: 14px; color: #166534; margin-bottom: 8px; }
+  .route-result h3 { font-size: 14px; color: #166534; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .route-stat { font-size: 13px; color: #15803d; margin-bottom: 4px; }
   .optimized-list { list-style: none; margin-top: 12px; }
-  .optimized-list li { padding: 6px 0; font-size: 13px; color: #374151; border-bottom: 1px dashed #d1d5db; display: flex; gap: 8px; }
+  .optimized-list li { padding: 6px 0; font-size: 13px; color: #374151; border-bottom: 1px dashed #d1d5db; display: flex; gap: 8px; align-items: center; }
   .optimized-list li:last-child { border-bottom: none; }
-  .step-num { background: #667eea; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .step-num { background: #667eea; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; font-weight: 700; }
 
   .live-section { padding: 20px; flex: 1; }
   .live-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1f2937; display: flex; align-items: center; gap: 8px; }
   .trip-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
   .trip-card:hover { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1); }
   .trip-card.active { border-color: #667eea; background: #eff6ff; }
-  .trip-id { font-size: 12px; color: #6b7280; font-family: monospace; margin-bottom: 8px; }
+  .trip-id { font-size: 12px; color: #6b7280; font-family: monospace; margin-bottom: 8px; word-break: break-all; }
   .trip-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
   .trip-stat-label { font-size: 11px; color: #6b7280; }
   .trip-stat-value { font-size: 14px; font-weight: 600; color: #1f2937; }
   .trip-status { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-top: 8px; }
   .trip-status.moving { background: #dbeafe; color: #1e40af; }
   .trip-status.stopped { background: #fef3c7; color: #92400e; }
+  .trip-status.unknown { background: #f3f4f6; color: #6b7280; }
   
   #map { flex: 1; position: relative; }
   
   .center-btn {
     position: absolute; bottom: 30px; right: 30px; z-index: 1000;
     background: white; border: 2px solid #667eea; color: #667eea;
-    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
     display: none; align-items: center; justify-content: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 18px;
+    transition: all 0.2s;
   }
-  .center-btn:hover { background: #667eea; color: white; }
+  .center-btn:hover { background: #667eea; color: white; transform: scale(1.05); }
 
   .loading { text-align: center; padding: 10px; color: #6b7280; font-size: 13px; display: none; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* Panel de análisis de llegadas */
+  .arrivals-panel { 
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb; 
+    display: none;
+  }
+  .arrivals-title { 
+    font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 10px; 
+    display: flex; align-items: center; gap: 6px;
+  }
+  .arrival-item {
+    padding: 10px; background: #f9fafb; border-left: 3px solid #10b981;
+    margin-bottom: 8px; border-radius: 4px;
+  }
+  .arrival-item-title { font-weight: 600; color: #1f2937; font-size: 13px; }
+  .arrival-item-details { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
+  .arrival-summary {
+    margin-top: 12px; padding: 12px; background: #eff6ff; border-radius: 8px;
+    border: 1px solid #bfdbfe;
+  }
+  .arrival-summary-title { font-weight: 700; color: #1e40af; margin-bottom: 6px; font-size: 13px; }
+  .arrival-summary-data { font-size: 12px; color: #1e40af; line-height: 1.6; }
+  .arrival-summary-data b { color: #1e3a8a; }
+
+  .no-trips { text-align: center; padding: 30px 20px; color: #9ca3af; font-size: 14px; }
+  .no-trips i { font-size: 36px; margin-bottom: 10px; display: block; }
+  
+  .legend {
+    position: absolute; bottom: 30px; left: 30px; z-index: 1000;
+    background: white; padding: 12px 16px; border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-line { width: 24px; height: 3px; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -65,9 +104,10 @@
 <div id="sidebar">
   <div class="sidebar-header">
     <h1><i class="fas fa-map-marked-alt"></i> Empresa Carlitos</h1>
-    <p>Planificador de Rutas y Monitoreo</p>
+    <p>Planificador de Rutas y Monitoreo en Vivo</p>
   </div>
 
+  <!-- SECCIÓN 1: PLANIFICADOR DE RUTAS -->
   <div class="planner-section">
     <div class="planner-title"><i class="fas fa-route"></i> Planificar Ruta Óptima</div>
     <div id="addressInputs">
@@ -80,7 +120,7 @@
         <button onclick="removeAddress(this)" title="Eliminar">×</button>
       </div>
     </div>
-    <button class="btn-plan" style="background:#3b82f6; margin-bottom:8px;" onclick="addAddress()">+ Agregar dirección</button>
+    <button class="btn-plan secondary" onclick="addAddress()">+ Agregar dirección</button>
     <button class="btn-plan" id="btnCalculate" onclick="calculateOptimalRoute()">
       <i class="fas fa-calculator"></i> Calcular Ruta Óptima
     </button>
@@ -90,19 +130,29 @@
     </div>
 
     <div class="route-result" id="routeResult">
-      <h3>✅ Ruta Optimizada</h3>
+      <h3><i class="fas fa-check-circle"></i> Ruta Optimizada</h3>
       <div class="route-stat"><i class="fas fa-road"></i> <span id="resDistance">0</span> km</div>
       <div class="route-stat"><i class="fas fa-clock"></i> <span id="resTime">0</span></div>
       <ul class="optimized-list" id="resList"></ul>
     </div>
   </div>
 
+  <!-- SECCIÓN 2: RASTREO EN VIVO -->
   <div class="live-section">
     <div class="live-title"><i class="fas fa-satellite-dish"></i> Monitoreo en Vivo</div>
     <div id="tripsList">
-      <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 14px;">
+      <div class="no-trips">
+        <i class="fas fa-mobile-alt"></i>
         Esperando dispositivos móviles...
       </div>
+    </div>
+
+    <!-- Panel de análisis de llegadas -->
+    <div class="arrivals-panel" id="arrivalsPanel">
+      <div class="arrivals-title">
+        <i class="fas fa-flag-checkered" style="color:#10b981;"></i> Análisis de Recorrido Real
+      </div>
+      <div id="arrivalsContent"></div>
     </div>
   </div>
 </div>
@@ -111,43 +161,66 @@
   <button class="center-btn" id="centerBtn" onclick="centerOnMobile()" title="Centrar en móvil">
     <i class="fas fa-crosshairs"></i>
   </button>
+  
+  <div class="legend">
+    <div class="legend-item"><div class="legend-line" style="background:#10b981;"></div> Ruta planificada</div>
+    <div class="legend-item"><div class="legend-line" style="background:#667eea; border-top: 2px dashed #667eea; height:0;"></div> Recorrido móvil</div>
+    <div class="legend-item"><div class="legend-line" style="background:#f59e0b;"></div> Trazado GPS</div>
+    <div class="legend-item"><div style="width:14px;height:14px;background:#ef4444;border-radius:50%;border:2px solid white;"></div> Parada pendiente</div>
+    <div class="legend-item"><div style="width:14px;height:14px;background:#10b981;border-radius:50%;border:2px solid white;"></div> Parada confirmada</div>
+  </div>
 </div>
 
 <script>
 const BACKEND_URL = window.location.origin;
 let map;
 
+// Capas independientes del mapa
 let plannedRouteLine = null;
 let plannedMarkers = [];
 let liveRouteLine = null;
 let liveMarker = null;
+let arrivalMarkers = [];
 
 let selectedTripId = null;
 let pollInterval;
 let lastLivePosition = null;
 
-// Función para formatear duración en horas y minutos
+// Datos de la ruta planificada actual
+let currentPlannedWaypoints = [];
+let currentPlannedDuration = 0;
+let currentPlannedDistance = 0;
+
+// ============================================
+// UTILIDADES
+// ============================================
 function formatDuration(seconds) {
   const totalMinutes = Math.round(seconds / 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   
   if (hours > 0 && minutes > 0) {
-    return `${hours} hora${hours > 1 ? 's' : ''} ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+    return `${hours} hora${hours > 1 ? 's' : ''} ${minutes} min`;
   } else if (hours > 0) {
     return `${hours} hora${hours > 1 ? 's' : ''}`;
   } else if (minutes > 0) {
     return `${minutes} minuto${minutes !== 1 ? 's' : ''}`;
   } else {
-    return 'menos de 1 minuto';
+    return 'menos de 1 min';
   }
 }
 
+// ============================================
+// MAPA
+// ============================================
 function initMap() {
   map = L.map('map').setView([19.4326, -99.1332], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 }
 
+// ============================================
+// PLANIFICADOR DE RUTAS
+// ============================================
 function addAddress() {
   const container = document.getElementById('addressInputs');
   const div = document.createElement('div');
@@ -181,6 +254,7 @@ async function calculateOptimalRoute() {
   resultDiv.style.display = 'none';
 
   try {
+    // 1. Geocodificar direcciones
     const coords = [];
     for (const addr of inputs) {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`);
@@ -189,37 +263,50 @@ async function calculateOptimalRoute() {
       coords.push({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), name: addr });
     }
 
+    // 2. Calcular ruta óptima con OSRM (TSP)
     const coordsStr = coords.map(c => `${c.lon},${c.lat}`).join(';');
     const osrmUrl = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?overview=full&geometries=geojson&source=first&destination=last&roundtrip=false`;
     
     const osrmRes = await fetch(osrmUrl);
     const osrmData = await osrmRes.json();
-    
-    if (osrmData.code !== 'Ok') throw new Error('Error al calcular la ruta en OSRM');
+    if (osrmData.code !== 'Ok') throw new Error('Error al calcular la ruta');
 
     const trip = osrmData.trips[0];
     const waypoints = osrmData.waypoints;
 
-    if (plannedRouteLine) map.removeLayer(plannedRouteLine);
+    // 3. Limpiar ruta planificada anterior
+    if (plannedRouteLine) { map.removeLayer(plannedRouteLine); plannedRouteLine = null; }
     plannedMarkers.forEach(m => map.removeLayer(m));
     plannedMarkers = [];
 
+    // 4. Dibujar nueva ruta planificada
     const latlngs = trip.geometry.coordinates.map(c => [c[1], c[0]]);
     plannedRouteLine = L.polyline(latlngs, { color: '#10b981', weight: 5, opacity: 0.8 }).addTo(map);
-    
     map.fitBounds(plannedRouteLine.getBounds(), { padding: [50, 50] });
 
+    // 5. Guardar waypoints para enviar al móvil
+    currentPlannedWaypoints = waypoints.map((wp, i) => ({
+      index: i,
+      lat: wp.location[1],
+      lon: wp.location[0],
+      name: coords[wp.waypoint_index].name
+    }));
+    currentPlannedDuration = trip.duration;
+    currentPlannedDistance = trip.distance;
+
+    // 6. Dibujar marcadores numerados
     waypoints.forEach((wp, i) => {
       const icon = L.divIcon({
         className: '',
-        html: `<div style="background:#ef4444;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3)">${i+1}</div>`,
-        iconSize: [28, 28], iconAnchor: [14, 14]
+        html: `<div style="background:#ef4444;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:14px">${i+1}</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16]
       });
       const marker = L.marker([wp.location[1], wp.location[0]], { icon }).addTo(map)
        .bindPopup(`<b>Parada ${i+1}</b><br>${coords[wp.waypoint_index].name}`);
       plannedMarkers.push(marker);
     });
 
+    // 7. Mostrar resultados
     document.getElementById('resDistance').textContent = (trip.distance / 1000).toFixed(2);
     document.getElementById('resTime').textContent = formatDuration(trip.duration);
     
@@ -233,6 +320,22 @@ async function calculateOptimalRoute() {
 
     resultDiv.style.display = 'block';
 
+    // 8. Enviar ruta al móvil seleccionado
+    if (selectedTripId) {
+      try {
+        await fetch(`${BACKEND_URL}/api/route/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tripId: selectedTripId, waypoints: currentPlannedWaypoints })
+        });
+        console.log('✅ Ruta planificada enviada al móvil');
+      } catch (err) {
+        console.warn('No se pudo enviar la ruta al móvil:', err);
+      }
+    } else {
+      console.log('⚠️ Selecciona un móvil en "Monitoreo en Vivo" para enviarle la ruta');
+    }
+
   } catch (err) {
     alert('Error: ' + err.message);
     console.error(err);
@@ -242,6 +345,9 @@ async function calculateOptimalRoute() {
   }
 }
 
+// ============================================
+// RASTREO EN VIVO
+// ============================================
 async function loadTrips() {
   try {
     const res = await fetch(`${BACKEND_URL}/api/trips`);
@@ -249,19 +355,20 @@ async function loadTrips() {
     const container = document.getElementById('tripsList');
     
     if (trips.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 14px;">Esperando dispositivos móviles...</div>';
+      container.innerHTML = '<div class="no-trips"><i class="fas fa-mobile-alt"></i>Esperando dispositivos móviles...</div>';
       return;
     }
 
     container.innerHTML = trips.map(trip => {
-      const lastUpdate = new Date(trip.stats.lastUpdate).toLocaleTimeString('es-ES');
-      const distance = (trip.stats.distance / 1000).toFixed(2);
+      const lastUpdate = trip.stats.lastUpdate ? new Date(trip.stats.lastUpdate).toLocaleTimeString('es-ES') : '-';
+      const distance = ((trip.stats.distance || 0) / 1000).toFixed(2);
       const status = trip.lastPoint?.status || 'unknown';
-      const statusText = status === 'moving' ? '🚗 En Movimiento' : '🛑 Detenido';
+      const statusText = status === 'moving' ? '🚗 En Movimiento' : status === 'stopped' ? '🛑 Detenido' : '⏳ Iniciando';
+      const arrivalsBadge = trip.arrivalsCount > 0 ? `<span style="background:#10b981;color:white;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;">${trip.arrivalsCount} llegada${trip.arrivalsCount>1?'s':''}</span>` : '';
       
       return `
         <div class="trip-card ${trip.tripId === selectedTripId ? 'active' : ''}" onclick="selectTrip('${trip.tripId}')">
-          <div class="trip-id">ID: ${trip.tripId}</div>
+          <div class="trip-id">ID: ${trip.tripId} ${arrivalsBadge}</div>
           <div class="trip-status ${status}">${statusText}</div>
           <div class="trip-stats">
             <div class="trip-stat">
@@ -285,8 +392,14 @@ async function selectTrip(tripId) {
   
   if (pollInterval) clearInterval(pollInterval);
   
+  // Limpiar ruta en vivo anterior
   if (liveRouteLine) { map.removeLayer(liveRouteLine); liveRouteLine = null; }
   if (liveMarker) { map.removeLayer(liveMarker); liveMarker = null; }
+  arrivalMarkers.forEach(m => map.removeLayer(m));
+  arrivalMarkers = [];
+  lastLivePosition = null;
+  document.getElementById('centerBtn').style.display = 'none';
+  document.getElementById('arrivalsPanel').style.display = 'none';
 
   await fetchTripData(tripId);
   
@@ -303,6 +416,8 @@ async function fetchTripData(tripId) {
     if (!res.ok) throw new Error('No encontrado');
     const data = await res.json();
     drawLiveRoute(data.points);
+    drawArrivals(data.arrivals || []);
+    updateArrivalsPanel(data.arrivals || [], data.plannedWaypoints || []);
   } catch (err) { console.error(err); }
 }
 
@@ -316,7 +431,7 @@ function drawLiveRoute(points) {
   if (liveRouteLine) {
     liveRouteLine.setLatLngs(latlngs);
   } else {
-    liveRouteLine = L.polyline(latlngs, { color: '#667eea', weight: 4, dashArray: '5, 10' }).addTo(map);
+    liveRouteLine = L.polyline(latlngs, { color: '#667eea', weight: 4, dashArray: '5, 10', opacity: 0.8 }).addTo(map);
   }
 
   if (liveMarker) {
@@ -325,11 +440,111 @@ function drawLiveRoute(points) {
     liveMarker = L.marker([lastLivePosition.lat, lastLivePosition.lng], {
       icon: L.divIcon({
         className: '',
-        html: '<div style="background:#667eea;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>',
-        iconSize: [22, 22], iconAnchor: [11, 11]
+        html: '<div style="background:#667eea;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
+        iconSize: [24, 24], iconAnchor: [12, 12]
       })
     }).addTo(map).bindPopup('Móvil en vivo');
   }
+  // NO se hace fitBounds aquí para dar libertad de movimiento al usuario
+}
+
+function drawArrivals(arrivals) {
+  if (!arrivals || arrivals.length === 0) return;
+  
+  arrivalMarkers.forEach(m => map.removeLayer(m));
+  arrivalMarkers = [];
+
+  arrivals.forEach((arr, i) => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:#10b981;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:12px">✓${i+1}</div>`,
+      iconSize: [32, 32], iconAnchor: [16, 16]
+    });
+    const marker = L.marker([arr.lat, arr.lng], { icon }).addTo(map)
+      .bindPopup(`
+        <b>Parada ${arr.waypointIndex + 1} ✓</b><br>
+        🕐 ${new Date(arr.timestamp).toLocaleTimeString('es-ES')}<br>
+        📏 Tramo: ${(arr.legDistance/1000).toFixed(2)} km<br>
+        ⏱️ Duración: ${formatDuration(arr.legDuration)}<br>
+        🚗 Movimiento: ${formatDuration(arr.legMovingTime)}<br>
+        🛑 Detenido: ${formatDuration(arr.legStoppedTime)}
+      `);
+    arrivalMarkers.push(marker);
+  });
+}
+
+function updateArrivalsPanel(arrivals, plannedWaypoints) {
+  const panel = document.getElementById('arrivalsPanel');
+  if (!panel) return;
+  
+  if (!arrivals || arrivals.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  panel.style.display = 'block';
+  const content = document.getElementById('arrivalsContent');
+  
+  let totalRealDuration = 0;
+  let totalRealDistance = 0;
+  let totalRealMoving = 0;
+  let totalRealStopped = 0;
+  
+  let html = '';
+  arrivals.forEach((arr, i) => {
+    const wp = plannedWaypoints.find(w => w.index === arr.waypointIndex);
+    const name = wp ? wp.name : `Parada ${arr.waypointIndex + 1}`;
+    const time = new Date(arr.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    
+    totalRealDuration += arr.legDuration;
+    totalRealDistance += arr.legDistance;
+    totalRealMoving += arr.legMovingTime;
+    totalRealStopped += arr.legStoppedTime;
+    
+    html += `
+      <div class="arrival-item">
+        <div class="arrival-item-title">✓ Parada ${arr.waypointIndex + 1} - ${name}</div>
+        <div class="arrival-item-details">
+          🕐 ${time} • 📏 ${(arr.legDistance/1000).toFixed(2)} km • ⏱️ ${formatDuration(arr.legDuration)}<br>
+          🚗 ${formatDuration(arr.legMovingTime)} en movimiento • 🛑 ${formatDuration(arr.legStoppedTime)} detenido
+        </div>
+      </div>
+    `;
+  });
+  
+  // Resumen comparativo
+  let comparisonHtml = '';
+  if (currentPlannedDuration > 0 && selectedTripId) {
+    const diff = totalRealDuration - currentPlannedDuration;
+    const diffPercent = ((diff / currentPlannedDuration) * 100).toFixed(0);
+    const diffText = diff > 0 
+      ? `<span style="color:#dc2626">+${formatDuration(diff)} (${diffPercent}% más)</span>`
+      : `<span style="color:#10b981">${formatDuration(Math.abs(diff))} menos</span>`;
+    
+    comparisonHtml = `
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #bfdbfe; font-size:11px;">
+        <div>📊 vs Planificado:</div>
+        <div>Plan: ${formatDuration(currentPlannedDuration)} • ${(currentPlannedDistance/1000).toFixed(2)} km</div>
+        <div>Real: ${formatDuration(totalRealDuration)} • ${(totalRealDistance/1000).toFixed(2)} km</div>
+        <div>Diferencia: ${diffText}</div>
+      </div>
+    `;
+  }
+  
+  html += `
+    <div class="arrival-summary">
+      <div class="arrival-summary-title">📊 Resumen del recorrido</div>
+      <div class="arrival-summary-data">
+        📏 Distancia total: <b>${(totalRealDistance/1000).toFixed(2)} km</b><br>
+        ⏱️ Tiempo total: <b>${formatDuration(totalRealDuration)}</b><br>
+        🚗 En movimiento: <b>${formatDuration(totalRealMoving)}</b><br>
+        🛑 Detenido: <b>${formatDuration(totalRealStopped)}</b>
+        ${comparisonHtml}
+      </div>
+    </div>
+  `;
+  
+  content.innerHTML = html;
 }
 
 function centerOnMobile() {
@@ -338,6 +553,9 @@ function centerOnMobile() {
   }
 }
 
+// ============================================
+// INICIALIZACIÓN
+// ============================================
 initMap();
 loadTrips();
 setInterval(loadTrips, 5000);
