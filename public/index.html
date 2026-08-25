@@ -39,6 +39,7 @@
   .timeline-marker { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
   .timeline-marker.move { background: #dbeafe; color: #3b82f6; }
   .timeline-marker.stop { background: #fef3c7; color: #f59e0b; }
+  .timeline-marker.arrive { background: #dcfce7; color: #16a34a; }
   .timeline-content { flex: 1; }
   .timeline-time { font-size: 13px; font-weight: 600; color: #1f2937; }
   .timeline-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
@@ -48,6 +49,8 @@
   .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
   .btn-secondary { background: #f3f4f6; color: #374151; }
   .btn-danger { background: #fee2e2; color: #dc2626; }
+  .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; animation: pulseBtn 1.5s infinite; }
+  @keyframes pulseBtn { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); } }
   .current-location { background: #ecfdf5; border: 1px solid #10b981; border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
   .location-icon { width: 40px; height: 40px; background: #10b981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .location-info { flex: 1; }
@@ -56,6 +59,24 @@
   .loading { text-align: center; padding: 20px; color: #6b7280; }
   .spinner { width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .arrive-banner {
+    display: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 16px;
+    margin: 0 16px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    animation: slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .arrive-banner h3 { margin: 0 0 8px 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .arrive-banner p { margin: 0 0 12px 0; font-size: 13px; opacity: 0.95; }
+  .arrive-banner button {
+    width: 100%; padding: 12px; background: white; color: #059669;
+    border: none; border-radius: 8px; font-weight: 700; font-size: 15px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
 </style>
 </head>
 <body>
@@ -80,6 +101,15 @@
         <div class="location-address" id="currentAddress">Buscando señal GPS...</div>
       </div>
     </div>
+
+    <div class="arrive-banner" id="arriveBanner">
+      <h3><i class="fas fa-map-marker-alt"></i> <span id="arriveTitle">¡Destino cercano!</span></h3>
+      <p id="arriveDesc">Estás cerca de tu siguiente parada</p>
+      <button onclick="confirmArrival()">
+        <i class="fas fa-check-circle"></i> ¡LLEGUÉ!
+      </button>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card" id="cardMoving">
         <div class="stat-icon"><i class="fas fa-car"></i></div>
@@ -119,17 +149,26 @@ if (!tripId) {
 }
 
 let map, userMarker;
-// 🆕 NUEVO: Variables para el trazado del recorrido
-let trailLine = null;
-let trailPoints = [];
+let trailLine = null, trailPoints = [];
+let plannedMarkers = [];
+
+let plannedWaypoints = [];
+let visitedWaypoints = new Set();
+let nextWaypointIndex = 0;
+let currentArrivalTarget = null;
+const ARRIVAL_RADIUS = 50;
 
 let watchId = null, isTracking = true, lastPosition = null, tripStartTime = null;
 let movingStartTime = null, stoppedStartTime = null;
 let totalMovingTime = 0, totalStoppedTime = 0, totalDistance = 0;
 let timelineEvents = [], currentStatus = 'unknown';
 const speedThreshold = 1.5;
-// Distancia mínima (metros) para agregar un punto al trazado (evita ruido GPS)
 const minTrailDistance = 5;
+
+let legStartTime = null;
+let legStartMovingTime = 0;
+let legStartStoppedTime = 0;
+let legStartDistance = 0;
 
 function initMap() {
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([19.4326, -99.1332], 15);
@@ -138,11 +177,147 @@ function initMap() {
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 }
 
+async function loadPlannedRoute() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/route/${tripId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    if (data.plannedWaypoints && data.plannedWaypoints.length > 0) {
+      plannedWaypoints = data.plannedWaypoints;
+      
+      if (data.arrivals) {
+        data.arrivals.forEach(a => visitedWaypoints.add(a.waypointIndex));
+      }
+      
+      plannedMarkers.forEach(m => map.removeLayer(m));
+      plannedMarkers = [];
+      plannedWaypoints.forEach((wp, i) => {
+        const visited = visitedWaypoints.has(i);
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="background:${visited ? '#10b981' : '#ef4444'};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:14px">${visited ? '✓' : (i+1)}</div>`,
+          iconSize: [32, 32], iconAnchor: [16, 16]
+        });
+        const marker = L.marker([wp.lat, wp.lon], { icon }).addTo(map)
+          .bindPopup(`<b>Parada ${i+1}</b><br>${wp.name}`);
+        plannedMarkers.push(marker);
+      });
+      
+      for (let i = 0; i < plannedWaypoints.length; i++) {
+        if (!visitedWaypoints.has(i)) {
+          nextWaypointIndex = i;
+          resetLegTracking();
+          break;
+        }
+      }
+    }
+  } catch (err) {
+    console.log('No hay ruta planificada aún');
+  }
+}
+
+function resetLegTracking() {
+  legStartTime = new Date();
+  legStartMovingTime = totalMovingTime;
+  legStartStoppedTime = totalStoppedTime;
+  legStartDistance = totalDistance;
+}
+
+function checkProximity() {
+  if (!lastPosition || plannedWaypoints.length === 0) return;
+  if (nextWaypointIndex >= plannedWaypoints.length) return;
+  
+  const target = plannedWaypoints[nextWaypointIndex];
+  const distance = calculateDistance(lastPosition.lat, lastPosition.lng, target.lat, target.lon);
+  
+  if (distance <= ARRIVAL_RADIUS && currentArrivalTarget === null) {
+    currentArrivalTarget = nextWaypointIndex;
+    showArriveBanner(target, distance);
+  } else if (distance > ARRIVAL_RADIUS * 2 && currentArrivalTarget === nextWaypointIndex) {
+    hideArriveBanner();
+  }
+}
+
+function showArriveBanner(waypoint, distance) {
+  const banner = document.getElementById('arriveBanner');
+  document.getElementById('arriveTitle').textContent = `Parada ${currentArrivalTarget + 1}`;
+  document.getElementById('arriveDesc').textContent = `${waypoint.name} • ${Math.round(distance)}m`;
+  banner.style.display = 'block';
+}
+
+function hideArriveBanner() {
+  document.getElementById('arriveBanner').style.display = 'none';
+  currentArrivalTarget = null;
+}
+
+async function confirmArrival() {
+  if (currentArrivalTarget === null) return;
+  
+  const waypoint = plannedWaypoints[currentArrivalTarget];
+  const now = new Date();
+  
+  const legDuration = (now - legStartTime) / 1000;
+  const legDistance = totalDistance - legStartDistance;
+  const legMovingTime = totalMovingTime - legStartMovingTime;
+  const legStoppedTime = totalStoppedTime - legStartStoppedTime;
+  
+  const payload = {
+    tripId,
+    waypointIndex: currentArrivalTarget,
+    lat: lastPosition.lat,
+    lng: lastPosition.lng,
+    legDistance,
+    legDuration,
+    legMovingTime,
+    legStoppedTime
+  };
+  
+  try {
+    await fetch(`${BACKEND_URL}/api/arrive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    addTimelineEvent('arrive', now, 0, waypoint.name, currentArrivalTarget + 1);
+    
+    visitedWaypoints.add(currentArrivalTarget);
+    
+    if (plannedMarkers[currentArrivalTarget]) {
+      map.removeLayer(plannedMarkers[currentArrivalTarget]);
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#10b981;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:14px">✓</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16]
+      });
+      plannedMarkers[currentArrivalTarget] = L.marker([waypoint.lat, waypoint.lon], { icon }).addTo(map)
+        .bindPopup(`<b>Parada ${currentArrivalTarget + 1} ✓</b><br>${waypoint.name}`);
+    }
+    
+    hideArriveBanner();
+    
+    nextWaypointIndex = currentArrivalTarget + 1;
+    currentArrivalTarget = null;
+    
+    resetLegTracking();
+    
+    alert(`✅ Llegada registrada a la parada ${waypoint.index + 1}`);
+    
+  } catch (err) {
+    alert('Error al registrar llegada: ' + err.message);
+  }
+}
+
 function startTracking() {
   if (!navigator.geolocation) { alert('Tu navegador no soporta geolocalización'); return; }
   tripStartTime = new Date(); movingStartTime = new Date();
+  legStartTime = new Date();
   watchId = navigator.geolocation.watchPosition(handlePosition, handleError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   document.getElementById('statusText').textContent = 'Rastreando...';
+  
+  loadPlannedRoute();
+  setInterval(loadPlannedRoute, 30000);
 }
 
 function handlePosition(position) {
@@ -156,23 +331,20 @@ function handlePosition(position) {
     const distance = calculateDistance(lastPosition.lat, lastPosition.lng, lat, lng);
     totalDistance += distance;
     
-    // 🆕 NUEVO: Agregar punto al trazado si se movió lo suficiente
-    if (distance >= minTrailDistance) {
-      addTrailPoint(lat, lng);
-    }
+    if (distance >= minTrailDistance) addTrailPoint(lat, lng);
 
     const isMoving = speed !== null && speed > speedThreshold;
     updateTimeTracking(isMoving, timestamp);
     if (isMoving && currentStatus === 'stopped') addTimelineEvent('move', timestamp, speed);
     else if (!isMoving && currentStatus === 'moving') addTimelineEvent('stop', timestamp);
     currentStatus = isMoving ? 'moving' : 'stopped';
+    
+    checkProximity();
   } else {
-    // Primer punto: iniciar el trazado
     addTrailPoint(lat, lng);
   }
   
   lastPosition = currentPosition;
-  
   updateUI(currentPosition);
   updateStats();
 
@@ -181,20 +353,12 @@ function handlePosition(position) {
   navigator.sendBeacon(`${BACKEND_URL}/api/update`, blob);
 }
 
-// 🆕 NUEVA FUNCIÓN: Agregar punto al trazado del recorrido
 function addTrailPoint(lat, lng) {
   trailPoints.push([lat, lng]);
-  
   if (trailLine) {
     trailLine.setLatLngs(trailPoints);
   } else {
-    trailLine = L.polyline(trailPoints, { 
-      color: '#f59e0b',    // Naranja/ámbar para diferenciar del marcador azul
-      weight: 5, 
-      opacity: 0.85,
-      lineCap: 'round',
-      lineJoin: 'round'
-    }).addTo(map);
+    trailLine = L.polyline(trailPoints, { color: '#f59e0b', weight: 5, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(map);
   }
 }
 
@@ -214,9 +378,9 @@ function updateTimeTracking(isMoving, timestamp) {
   }
 }
 
-function addTimelineEvent(type, timestamp, speed = 0) {
-  timelineEvents.unshift({ type, time: timestamp, speed: type === 'move' ? (speed * 3.6).toFixed(1) : 0 });
-  if (timelineEvents.length > 20) timelineEvents.pop();
+function addTimelineEvent(type, timestamp, speed = 0, name = '', stopNum = 0) {
+  timelineEvents.unshift({ type, time: timestamp, speed: type === 'move' ? (speed * 3.6).toFixed(1) : 0, name, stopNum });
+  if (timelineEvents.length > 30) timelineEvents.pop();
   renderTimeline();
 }
 
@@ -226,6 +390,7 @@ function renderTimeline() {
   container.innerHTML = timelineEvents.map(e => {
     const timeStr = e.time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     if (e.type === 'move') return `<div class="timeline-item"><div class="timeline-marker move"><i class="fas fa-car"></i></div><div class="timeline-content"><div class="timeline-time">Reanudó el movimiento</div><div class="timeline-desc">${timeStr} • ${e.speed} km/h</div></div></div>`;
+    if (e.type === 'arrive') return `<div class="timeline-item"><div class="timeline-marker arrive"><i class="fas fa-flag-checkered"></i></div><div class="timeline-content"><div class="timeline-time">✅ Llegada a Parada ${e.stopNum}</div><div class="timeline-desc">${timeStr} • ${e.name}</div></div></div>`;
     return `<div class="timeline-item"><div class="timeline-marker stop"><i class="fas fa-pause"></i></div><div class="timeline-content"><div class="timeline-time">Se detuvo</div><div class="timeline-desc">${timeStr}</div></div></div>`;
   }).join('');
 }
@@ -287,11 +452,12 @@ function resetTrip() {
   localStorage.setItem('currentTripId', tripId);
   watchId = null; lastPosition = null; tripStartTime = null; movingStartTime = null; stoppedStartTime = null;
   totalMovingTime = 0; totalStoppedTime = 0; totalDistance = 0; timelineEvents = []; currentStatus = 'unknown'; isTracking = true;
-  
-  // 🆕 NUEVO: Limpiar el trazado del recorrido
+  plannedWaypoints = []; visitedWaypoints.clear(); nextWaypointIndex = 0; currentArrivalTarget = null;
   if (trailLine) { map.removeLayer(trailLine); trailLine = null; }
   trailPoints = [];
-  
+  plannedMarkers.forEach(m => map.removeLayer(m));
+  plannedMarkers = [];
+  hideArriveBanner();
   if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
   document.getElementById('currentAddress').textContent = 'Buscando señal GPS...';
   document.getElementById('timelineContent').innerHTML = '<div class="loading"><div class="spinner"></div><div>Esperando...</div></div>';
