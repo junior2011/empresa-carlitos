@@ -119,11 +119,17 @@ if (!tripId) {
 }
 
 let map, userMarker;
+// 🆕 NUEVO: Variables para el trazado del recorrido
+let trailLine = null;
+let trailPoints = [];
+
 let watchId = null, isTracking = true, lastPosition = null, tripStartTime = null;
 let movingStartTime = null, stoppedStartTime = null;
 let totalMovingTime = 0, totalStoppedTime = 0, totalDistance = 0;
 let timelineEvents = [], currentStatus = 'unknown';
 const speedThreshold = 1.5;
+// Distancia mínima (metros) para agregar un punto al trazado (evita ruido GPS)
+const minTrailDistance = 5;
 
 function initMap() {
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([19.4326, -99.1332], 15);
@@ -149,12 +155,22 @@ function handlePosition(position) {
   if (lastPosition) {
     const distance = calculateDistance(lastPosition.lat, lastPosition.lng, lat, lng);
     totalDistance += distance;
+    
+    // 🆕 NUEVO: Agregar punto al trazado si se movió lo suficiente
+    if (distance >= minTrailDistance) {
+      addTrailPoint(lat, lng);
+    }
+
     const isMoving = speed !== null && speed > speedThreshold;
     updateTimeTracking(isMoving, timestamp);
     if (isMoving && currentStatus === 'stopped') addTimelineEvent('move', timestamp, speed);
     else if (!isMoving && currentStatus === 'moving') addTimelineEvent('stop', timestamp);
     currentStatus = isMoving ? 'moving' : 'stopped';
+  } else {
+    // Primer punto: iniciar el trazado
+    addTrailPoint(lat, lng);
   }
+  
   lastPosition = currentPosition;
   
   updateUI(currentPosition);
@@ -163,6 +179,23 @@ function handlePosition(position) {
   const payload = { tripId, lat, lng, status: currentStatus, distance: totalDistance, movingTime: totalMovingTime, stoppedTime: totalStoppedTime };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
   navigator.sendBeacon(`${BACKEND_URL}/api/update`, blob);
+}
+
+// 🆕 NUEVA FUNCIÓN: Agregar punto al trazado del recorrido
+function addTrailPoint(lat, lng) {
+  trailPoints.push([lat, lng]);
+  
+  if (trailLine) {
+    trailLine.setLatLngs(trailPoints);
+  } else {
+    trailLine = L.polyline(trailPoints, { 
+      color: '#f59e0b',    // Naranja/ámbar para diferenciar del marcador azul
+      weight: 5, 
+      opacity: 0.85,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+  }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -254,6 +287,11 @@ function resetTrip() {
   localStorage.setItem('currentTripId', tripId);
   watchId = null; lastPosition = null; tripStartTime = null; movingStartTime = null; stoppedStartTime = null;
   totalMovingTime = 0; totalStoppedTime = 0; totalDistance = 0; timelineEvents = []; currentStatus = 'unknown'; isTracking = true;
+  
+  // 🆕 NUEVO: Limpiar el trazado del recorrido
+  if (trailLine) { map.removeLayer(trailLine); trailLine = null; }
+  trailPoints = [];
+  
   if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
   document.getElementById('currentAddress').textContent = 'Buscando señal GPS...';
   document.getElementById('timelineContent').innerHTML = '<div class="loading"><div class="spinner"></div><div>Esperando...</div></div>';
